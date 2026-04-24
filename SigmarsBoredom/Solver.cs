@@ -15,12 +15,13 @@ namespace SigmarsBoredom
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
-        /// Reads and solves board in an infinite loop.
+        /// Reads and solves board in an infinite loop until cancellation is requested.
         /// </summary>
-        public void Run()
+        /// <param name="cancellationToken">Token used to stop the loop.</param>
+        public void Run(CancellationToken cancellationToken)
         {
             var boardReader = new BoardReader();
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 // Read the board
                 var board = boardReader.ReadBoard();
@@ -33,7 +34,7 @@ namespace SigmarsBoredom
                 if (solution != null)
                 {
                     _logger.Info("A solution has been found. Attempting to play it...");
-                    PlaySolution(solution);
+                    PlaySolution(solution, cancellationToken);
                 }
                 else
                 {
@@ -43,6 +44,8 @@ namespace SigmarsBoredom
                 // Start a new round
                 StartNewGame();
             }
+
+            _logger.Info("Solver stopped.");
         }
 
         /// <summary>
@@ -254,16 +257,23 @@ namespace SigmarsBoredom
         /// Plays the given solution.
         /// </summary>
         /// <param name="solution">Sequence of plays to solve the board.</param>
-        private void PlaySolution(List<Play> solution)
+        /// <param name="cancellationToken">Token used to abort playback early.</param>
+        private void PlaySolution(List<Play> solution, CancellationToken cancellationToken)
         {
             var inputService = new InputService(Program.OpusMagnumProcessName);
             foreach (var play in solution)
             {
+                if (cancellationToken.IsCancellationRequested)
+                    return;
+
                 // Click the first tile
                 Point windowFirstTilePoint = SigmarCoordinateHelper.GetWindowCoordinateOfTileCenterOnBoard(play.FirstTile);
                 inputService.SendMouseLeftButtonClick(windowFirstTilePoint.X, windowFirstTilePoint.Y);
 
                 Thread.Sleep(50); // Leave the game some time to react.
+
+                if (cancellationToken.IsCancellationRequested)
+                    return;
 
                 // Click the second tile
                 Point windowSecondTilePoint = SigmarCoordinateHelper.GetWindowCoordinateOfTileCenterOnBoard(play.SecondTile);
