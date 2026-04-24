@@ -1,4 +1,6 @@
-﻿namespace SigmarsBoredom
+﻿using System.Windows.Forms;
+
+namespace SigmarsBoredom
 {
     /// <summary>
     /// Sigmar's Boredom.
@@ -16,10 +18,12 @@
         /// </summary>
         public const string OpusMagnumProcessName = "Lightning";
 
+        [System.STAThread]
         static void Main(string[] args)
         {
-            var solver = new Solver();
-            solver.Run();
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new OverlayForm());
         }
     }
 }
