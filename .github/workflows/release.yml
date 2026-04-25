@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore SigmarsBoredom.sln
+
+      - name: Build Release
+        run: msbuild SigmarsBoredom.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Zip release artifacts
+        run: |
+          $tag = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { '${{ github.event.inputs.tag }}' }
+          Compress-Archive -Path SigmarsBoredom\bin\Release\* -DestinationPath "SigmarsBoredom-$tag-win.zip"
+        shell: pwsh
+
+      - name: Determine release tag
+        id: get_tag
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            echo "tag=$env:GITHUB_REF_NAME" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "tag=${{ github.event.inputs.tag }}" >> $env:GITHUB_OUTPUT
+          }
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          name: SigmarsBoredom ${{ steps.get_tag.outputs.tag }}
+          files: SigmarsBoredom-${{ steps.get_tag.outputs.tag }}-win.zip
+          generate_release_notes: true
