@@ -128,8 +128,16 @@ namespace SigmarsBoredom
                     var targetRectangle = SigmarCoordinateHelper.GetMarbleRectangle(boardX, boardY);
 
                     // Get some pixels around the marble and figure out if they are bright enough to be highlights
-                    var targetColorBottom = boardBmp.GetPixel(targetRectangle.X + targetRectangle.Width / 2, targetRectangle.Bottom - SigmarCoordinateHelper.ScaleOffsetY(2));
-                    var targetColorTop = boardBmp.GetPixel(targetRectangle.X + targetRectangle.Width / 2 - SigmarCoordinateHelper.ScaleOffsetX(8), targetRectangle.Top);
+                    var bottomYOffset = Math.Max(1, SigmarCoordinateHelper.ScaleOffsetY(2));
+                    var topXOffset = SigmarCoordinateHelper.ScaleOffsetX(8);
+
+                    var bottomSampleX = Math.Max(0, Math.Min(targetRectangle.X + targetRectangle.Width / 2, boardBmp.Width - 1));
+                    var bottomSampleY = Math.Max(0, Math.Min(targetRectangle.Bottom - bottomYOffset, boardBmp.Height - 1));
+                    var topSampleX = Math.Max(0, Math.Min(targetRectangle.X + targetRectangle.Width / 2 - topXOffset, boardBmp.Width - 1));
+                    var topSampleY = Math.Max(0, Math.Min(targetRectangle.Top, boardBmp.Height - 1));
+
+                    var targetColorBottom = boardBmp.GetPixel(bottomSampleX, bottomSampleY);
+                    var targetColorTop = boardBmp.GetPixel(topSampleX, topSampleY);
                     if (targetColorBottom.GetBrightness() > 0.85f || targetColorTop.GetBrightness() > 0.85f)
                     {
                         highlightedPoints.Add(new Point(boardX, boardY));
