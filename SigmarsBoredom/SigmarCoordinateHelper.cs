@@ -210,13 +210,18 @@ namespace SigmarsBoredom
             return (int)Math.Round(baseCoordinate * _scaleY);
         }
 
+        private static int ScaleUniformCoordinate(int baseCoordinate)
+        {
+            return (int)Math.Round(baseCoordinate * Math.Min(_scaleX, _scaleY));
+        }
+
         private static void RecomputeScaledCoordinates()
         {
             _boardStartX = ScaleXCoordinate(BaseBoardStartX);
             _boardStartY = ScaleYCoordinate(BaseBoardStartY);
             _boardWidth = ScaleXCoordinate(BaseBoardWidth);
             _boardHeight = ScaleYCoordinate(BaseBoardHeight);
-            _marbleSize = ScaleXCoordinate(BaseMarbleSize);
+            _marbleSize = ScaleUniformCoordinate(BaseMarbleSize);
             _marbleOffsetX = ScaleXCoordinate(BaseMarbleOffsetX);
             _marbleOffsetY = ScaleYCoordinate(BaseMarbleOffsetY);
 
