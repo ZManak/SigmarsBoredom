@@ -38,6 +38,10 @@ namespace SigmarsBoredom
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
         {
@@ -72,35 +76,39 @@ namespace SigmarsBoredom
         /// <param name="rectangleInWindow">If specified, defines the area of the window that will be captured.</param>
         public Bitmap GetWindowImage(Rectangle? rectangleInWindow = null)
         {
-            RECT sourceRectangle;
+            int srcX, srcY, width, height;
+
             if (rectangleInWindow == null)
             {
-                if (!GetWindowRect(_mainWindowHandle, out sourceRectangle))
-                    throw new Exception("Unable to get window dimensions");
+                // Use GetClientRect so that SrcX/SrcY are in client (window-relative) coordinates.
+                // GetWindowRect returns screen coordinates, which would cause BitBlt to sample the
+                // wrong area when the window is not positioned at (0,0) on the screen.
+                var clientRect = GetMainClientRectangle();
+                srcX = 0;
+                srcY = 0;
+                width = clientRect.Right - clientRect.Left;
+                height = clientRect.Bottom - clientRect.Top;
             }
             else
             {
-                sourceRectangle = new RECT()
-                {
-                    Left = rectangleInWindow.Value.X, Top = rectangleInWindow.Value.Y,
-                    Right = rectangleInWindow.Value.Right, Bottom = rectangleInWindow.Value.Bottom
-                };
+                // rectangleInWindow is already in client (window-relative) coordinates.
+                srcX = rectangleInWindow.Value.X;
+                srcY = rectangleInWindow.Value.Y;
+                width = rectangleInWindow.Value.Width;
+                height = rectangleInWindow.Value.Height;
             }
-
-            int xLoc = sourceRectangle.Right - sourceRectangle.Left;
-            int yLoc = sourceRectangle.Bottom - sourceRectangle.Top;
 
             IntPtr handle = GetDC(_mainWindowHandle);
 
             IntPtr mem = CreateCompatibleDC(handle);
 
-            IntPtr result = CreateCompatibleBitmap(handle, xLoc, yLoc);
+            IntPtr result = CreateCompatibleBitmap(handle, width, height);
 
             if (result == IntPtr.Zero)
                 throw new Exception("Could not create compatible bitmap from the target process' main window.");
 
             IntPtr oldBmp = SelectObject(mem, result);
-            BitBlt(mem, 0, 0, xLoc, yLoc, handle, sourceRectangle.Left, sourceRectangle.Top, SRCCOPY);
+            BitBlt(mem, 0, 0, width, height, handle, srcX, srcY, SRCCOPY);
             SelectObject(mem, oldBmp);
             DeleteDC(mem);
             ReleaseDC(_mainWindowHandle, handle);
@@ -111,6 +119,38 @@ namespace SigmarsBoredom
             DeleteObject(mem);
 
             return (Bitmap)imgReturn;
+        }
+
+        /// <summary>
+        /// Gets the size of the target process' main window client area in pixels.
+        /// </summary>
+        public Size GetWindowSize()
+        {
+            var clientRect = GetMainClientRectangle();
+            return new Size(clientRect.Right - clientRect.Left, clientRect.Bottom - clientRect.Top);
+        }
+
+        /// <summary>
+        /// Gets the client rectangle of the target process' main window.
+        /// Coordinates are always relative to the window's top-left corner (Left=0, Top=0).
+        /// </summary>
+        private RECT GetMainClientRectangle()
+        {
+            if (!GetClientRect(_mainWindowHandle, out var clientRect))
+                throw new Exception("Unable to get client rectangle");
+
+            return clientRect;
+        }
+
+        /// <summary>
+        /// Gets the rectangle of the target process' main window in screen coordinates.
+        /// </summary>
+        private RECT GetMainWindowRectangle()
+        {
+            if (!GetWindowRect(_mainWindowHandle, out var sourceRectangle))
+                throw new Exception("Unable to get window dimensions");
+
+            return sourceRectangle;
         }
     }
 }

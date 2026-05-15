@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Linq;
 
 namespace SigmarsBoredom
@@ -9,34 +10,83 @@ namespace SigmarsBoredom
     public static class SigmarCoordinateHelper
     {
         /// <summary>
+        /// Baseline game window width used to calibrate absolute pixel coordinates.
+        /// </summary>
+        public const int ReferenceWidth = 1920;
+
+        /// <summary>
+        /// Baseline game window height used to calibrate absolute pixel coordinates.
+        /// </summary>
+        public const int ReferenceHeight = 1080;
+        private const int BaseBoardStartX = 861;
+        private const int BaseBoardStartY = 195;
+        private const int BaseBoardWidth = 712;
+        private const int BaseBoardHeight = 622;
+        private const int BaseMarbleSize = 52;
+        private const int BaseMarbleOffsetX = 66;
+        private const int BaseMarbleOffsetY = 57;
+        private const int BaseNewGameButtonX = 870;
+        private const int BaseNewGameButtonY = 885;
+        private const int BaseHintButtonY = 884;
+        private static readonly int[] BaseHintButtonXs = { 970, 1023, 1065, 1107, 1149, 1209, 1264, 1304, 1344, 1384, 1424, 1464 };
+
+        private static double _scaleX = 1d;
+        private static double _scaleY = 1d;
+        private static int _boardStartX;
+        private static int _boardStartY;
+        private static int _boardWidth;
+        private static int _boardHeight;
+        private static int _marbleSize;
+        private static int _marbleOffsetX;
+        private static int _marbleOffsetY;
+        private static Rectangle _boardRectangle;
+        private static Point[] _marbleHintCoordinates;
+        private static Point _newGameButtonPosition;
+
+        static SigmarCoordinateHelper()
+        {
+            RecomputeScaledCoordinates();
+        }
+
+        /// <summary>
+        /// Current horizontal scale factor relative to the 1920x1080 reference.
+        /// </summary>
+        public static double ScaleX => _scaleX;
+
+        /// <summary>
+        /// Current vertical scale factor relative to the 1920x1080 reference.
+        /// </summary>
+        public static double ScaleY => _scaleY;
+
+        /// <summary>
         /// X coordinate of the board in the Opus Magnum main window.
         /// </summary>
-        public const int BoardStartX = 861;
+        public static int BoardStartX => _boardStartX;
 
         /// <summary>
         /// Y coordinate of the board in the Opus Magnum main window.
         /// </summary>
-        public const int BoardStartY = 195;
+        public static int BoardStartY => _boardStartY;
 
         /// <summary>
         /// Width of the board in pixels.
         /// </summary>
-        public const int BoardWidth = 712;
+        public static int BoardWidth => _boardWidth;
 
         /// <summary>
         /// Height of the board in pixels.
         /// </summary>
-        public const int BoardHeight = 622;
+        public static int BoardHeight => _boardHeight;
 
         /// <summary>
         /// Rectangle of the board in the Opus Magnum main window.
         /// </summary>
-        public static readonly Rectangle BoardRectangle = new Rectangle(BoardStartX, BoardStartY, BoardWidth, BoardHeight);
+        public static Rectangle BoardRectangle => _boardRectangle;
 
         /// <summary>
         /// Size (in both width and height) of a marble in a tile.
         /// </summary>
-        public const int MarbleSize = 52;
+        public static int MarbleSize => _marbleSize;
 
         /// <summary>
         /// Number of tiles in both width and height on the board.
@@ -46,12 +96,12 @@ namespace SigmarsBoredom
         /// <summary>
         /// Offset in X coordinates between each potential marble.
         /// </summary>
-        public const int MarbleOffsetX = 66;
+        public static int MarbleOffsetX => _marbleOffsetX;
 
         /// <summary>
         /// Offset in Y coordinates between each potential marble.
         /// </summary>
-        public const int MarbleOffsetY = 57;
+        public static int MarbleOffsetY => _marbleOffsetY;
 
         /// <summary>
         /// Coordinates of tile spots on the board that are not tiles because they're outside of the board.
@@ -70,26 +120,26 @@ namespace SigmarsBoredom
         /// <summary>
         /// Coordinates of buttons that highlight marbles of the same type.
         /// </summary>
-        public static readonly Point[] MarbleHintCoordinates =
-        {
-            new Point(970, 884), // Salt
-            new Point(1023, 884), // Air
-            new Point(1065, 884), // Fire
-            new Point(1107, 884), // Water
-            new Point(1149, 884), // Earth
-            new Point(1209, 884), // Quicksilver
-            new Point(1264, 884), // Lead
-            new Point(1304, 884), // Tin
-            new Point(1344, 884), // Iron
-            new Point(1384, 884), // Copper
-            new Point(1424, 884), // Silver
-            new Point(1464, 884) // Gold
-        };
+        public static Point[] MarbleHintCoordinates => _marbleHintCoordinates;
 
         /// <summary>
         /// Coordinates of the "New game" button.
         /// </summary>
-        public static readonly Point NewGameButtonPosition = new Point(870, 885);
+        public static Point NewGameButtonPosition => _newGameButtonPosition;
+
+        /// <summary>
+        /// Initializes scaling based on the Opus Magnum main window size.
+        /// </summary>
+        /// <param name="windowSize">Current game window size in pixels.</param>
+        public static void Initialize(Size windowSize)
+        {
+            if (windowSize.Width <= 0 || windowSize.Height <= 0)
+                throw new ArgumentException("Window size must be strictly positive.", nameof(windowSize));
+
+            _scaleX = windowSize.Width / (double)ReferenceWidth;
+            _scaleY = windowSize.Height / (double)ReferenceHeight;
+            RecomputeScaledCoordinates();
+        }
 
         /// <summary>
         /// Gets the coordinates in the Opus Magnum window of the tile at the specified board coordinates.
@@ -123,6 +173,24 @@ namespace SigmarsBoredom
         }
 
         /// <summary>
+        /// Scales a horizontal pixel offset relative to a marble.
+        /// </summary>
+        /// <param name="value">Reference horizontal offset at 1920x1080.</param>
+        public static int ScaleOffsetX(int value)
+        {
+            return ScaleXCoordinate(value);
+        }
+
+        /// <summary>
+        /// Scales a vertical pixel offset relative to a marble.
+        /// </summary>
+        /// <param name="value">Reference vertical offset at 1920x1080.</param>
+        public static int ScaleOffsetY(int value)
+        {
+            return ScaleYCoordinate(value);
+        }
+
+        /// <summary>
         /// Determines whether the given coordinates match a valid tile on the board.
         /// </summary>
         /// <param name="boardX">Target X coordinate on the board.</param>
@@ -130,6 +198,40 @@ namespace SigmarsBoredom
         public static bool IsValidBoardCoordinate(int boardX, int boardY)
         {
             return boardX >= 0 && boardY >= 0 && boardX < BoardSize && boardY < BoardSize && !DeadTileSpots.Contains(new Point(boardX, boardY));
+        }
+
+        private static int ScaleXCoordinate(int baseCoordinate)
+        {
+            return (int)Math.Round(baseCoordinate * _scaleX);
+        }
+
+        private static int ScaleYCoordinate(int baseCoordinate)
+        {
+            return (int)Math.Round(baseCoordinate * _scaleY);
+        }
+
+        private static int ScaleUniformCoordinate(int baseCoordinate)
+        {
+            return (int)Math.Round(baseCoordinate * Math.Min(_scaleX, _scaleY));
+        }
+
+        private static void RecomputeScaledCoordinates()
+        {
+            _boardStartX = ScaleXCoordinate(BaseBoardStartX);
+            _boardStartY = ScaleYCoordinate(BaseBoardStartY);
+            _boardWidth = ScaleXCoordinate(BaseBoardWidth);
+            _boardHeight = ScaleYCoordinate(BaseBoardHeight);
+            _marbleSize = ScaleUniformCoordinate(BaseMarbleSize);
+            _marbleOffsetX = ScaleXCoordinate(BaseMarbleOffsetX);
+            _marbleOffsetY = ScaleYCoordinate(BaseMarbleOffsetY);
+
+            _boardRectangle = new Rectangle(_boardStartX, _boardStartY, _boardWidth, _boardHeight);
+
+            _marbleHintCoordinates = BaseHintButtonXs
+                .Select(x => new Point(ScaleXCoordinate(x), ScaleYCoordinate(BaseHintButtonY)))
+                .ToArray();
+
+            _newGameButtonPosition = new Point(ScaleXCoordinate(BaseNewGameButtonX), ScaleYCoordinate(BaseNewGameButtonY));
         }
     }
 }
