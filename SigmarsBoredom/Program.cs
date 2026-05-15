@@ -9,7 +9,7 @@ namespace SigmarsBoredom
     /// and that the board is currently in its initial position.
     /// It will capture Opus Magnum's window, and manipulate the mouse cursor to click on certain spots.
     /// It is designed to automatically solve Sigmar's Garden games in an infinite loop, starting new games automatically when it's done.
-    /// The game must be run as a borderless window at a resolution of 1920x1080.
+    /// The game must be run as a borderless window. Supported resolutions are scaled from a 1920x1080 reference layout.
     /// </summary>
     class Program
     {

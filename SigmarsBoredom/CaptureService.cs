@@ -72,20 +72,15 @@ namespace SigmarsBoredom
         /// <param name="rectangleInWindow">If specified, defines the area of the window that will be captured.</param>
         public Bitmap GetWindowImage(Rectangle? rectangleInWindow = null)
         {
-            RECT sourceRectangle;
-            if (rectangleInWindow == null)
-            {
-                if (!GetWindowRect(_mainWindowHandle, out sourceRectangle))
-                    throw new Exception("Unable to get window dimensions");
-            }
-            else
-            {
-                sourceRectangle = new RECT()
+            RECT sourceRectangle = rectangleInWindow == null
+                ? GetMainWindowRectangle()
+                : new RECT()
                 {
-                    Left = rectangleInWindow.Value.X, Top = rectangleInWindow.Value.Y,
-                    Right = rectangleInWindow.Value.Right, Bottom = rectangleInWindow.Value.Bottom
+                    Left = rectangleInWindow.Value.X,
+                    Top = rectangleInWindow.Value.Y,
+                    Right = rectangleInWindow.Value.Right,
+                    Bottom = rectangleInWindow.Value.Bottom
                 };
-            }
 
             int xLoc = sourceRectangle.Right - sourceRectangle.Left;
             int yLoc = sourceRectangle.Bottom - sourceRectangle.Top;
@@ -111,6 +106,26 @@ namespace SigmarsBoredom
             DeleteObject(mem);
 
             return (Bitmap)imgReturn;
+        }
+
+        /// <summary>
+        /// Gets the size of the target process' main window in pixels.
+        /// </summary>
+        public Size GetWindowSize()
+        {
+            var windowRect = GetMainWindowRectangle();
+            return new Size(windowRect.Right - windowRect.Left, windowRect.Bottom - windowRect.Top);
+        }
+
+        /// <summary>
+        /// Gets the rectangle of the target process' main window.
+        /// </summary>
+        private RECT GetMainWindowRectangle()
+        {
+            if (!GetWindowRect(_mainWindowHandle, out var sourceRectangle))
+                throw new Exception("Unable to get window dimensions");
+
+            return sourceRectangle;
         }
     }
 }

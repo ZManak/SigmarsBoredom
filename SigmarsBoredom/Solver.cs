@@ -20,6 +20,9 @@ namespace SigmarsBoredom
         /// <param name="cancellationToken">Token used to stop the loop.</param>
         public void Run(CancellationToken cancellationToken)
         {
+            var captureService = new CaptureService(Program.OpusMagnumProcessName);
+            SigmarCoordinateHelper.Initialize(captureService.GetWindowSize());
+
             var boardReader = new BoardReader();
             while (!cancellationToken.IsCancellationRequested)
             {

@@ -17,7 +17,7 @@ Clone the repository, compile with Visual Studio and you should be able to run i
 
 The solver expects you to have Opus Magnum up and running, with Sigmar's Garden opened on an initial, untouched board.
 
-The game must be launched in borderless window mode (this should be on by default) and at a resolution of 1920x1080.
+The game must be launched in borderless window mode (this should be on by default). The solver scales coordinates from a 1920x1080 reference layout to match your current window resolution.
 
 ## How it works
 
