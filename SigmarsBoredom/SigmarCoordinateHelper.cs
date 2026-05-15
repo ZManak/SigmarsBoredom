@@ -18,6 +18,17 @@ namespace SigmarsBoredom
         /// Baseline game window height used to calibrate absolute pixel coordinates.
         /// </summary>
         public const int ReferenceHeight = 1080;
+        private const int BaseBoardStartX = 861;
+        private const int BaseBoardStartY = 195;
+        private const int BaseBoardWidth = 712;
+        private const int BaseBoardHeight = 622;
+        private const int BaseMarbleSize = 52;
+        private const int BaseMarbleOffsetX = 66;
+        private const int BaseMarbleOffsetY = 57;
+        private const int BaseNewGameButtonX = 870;
+        private const int BaseNewGameButtonY = 885;
+        private const int BaseHintButtonY = 884;
+        private static readonly int[] BaseHintButtonXs = { 970, 1023, 1065, 1107, 1149, 1209, 1264, 1304, 1344, 1384, 1424, 1464 };
 
         private static double _scaleX = 1d;
         private static double _scaleY = 1d;
@@ -162,7 +173,7 @@ namespace SigmarsBoredom
         }
 
         /// <summary>
-        /// Scales an horizontal pixel offset relative to a marble.
+        /// Scales a horizontal pixel offset relative to a marble.
         /// </summary>
         /// <param name="value">Reference horizontal offset at 1920x1080.</param>
         public static int ScaleOffsetX(int value)
@@ -201,31 +212,21 @@ namespace SigmarsBoredom
 
         private static void RecomputeScaledCoordinates()
         {
-            _boardStartX = ScaleXCoordinate(861);
-            _boardStartY = ScaleYCoordinate(195);
-            _boardWidth = ScaleXCoordinate(712);
-            _boardHeight = ScaleYCoordinate(622);
-            _marbleSize = ScaleXCoordinate(52);
-            _marbleOffsetX = ScaleXCoordinate(66);
-            _marbleOffsetY = ScaleYCoordinate(57);
+            _boardStartX = ScaleXCoordinate(BaseBoardStartX);
+            _boardStartY = ScaleYCoordinate(BaseBoardStartY);
+            _boardWidth = ScaleXCoordinate(BaseBoardWidth);
+            _boardHeight = ScaleYCoordinate(BaseBoardHeight);
+            _marbleSize = ScaleXCoordinate(BaseMarbleSize);
+            _marbleOffsetX = ScaleXCoordinate(BaseMarbleOffsetX);
+            _marbleOffsetY = ScaleYCoordinate(BaseMarbleOffsetY);
 
             _boardRectangle = new Rectangle(_boardStartX, _boardStartY, _boardWidth, _boardHeight);
-            _marbleHintCoordinates = new[]
-            {
-                new Point(ScaleXCoordinate(970), ScaleYCoordinate(884)), // Salt
-                new Point(ScaleXCoordinate(1023), ScaleYCoordinate(884)), // Air
-                new Point(ScaleXCoordinate(1065), ScaleYCoordinate(884)), // Fire
-                new Point(ScaleXCoordinate(1107), ScaleYCoordinate(884)), // Water
-                new Point(ScaleXCoordinate(1149), ScaleYCoordinate(884)), // Earth
-                new Point(ScaleXCoordinate(1209), ScaleYCoordinate(884)), // Quicksilver
-                new Point(ScaleXCoordinate(1264), ScaleYCoordinate(884)), // Lead
-                new Point(ScaleXCoordinate(1304), ScaleYCoordinate(884)), // Tin
-                new Point(ScaleXCoordinate(1344), ScaleYCoordinate(884)), // Iron
-                new Point(ScaleXCoordinate(1384), ScaleYCoordinate(884)), // Copper
-                new Point(ScaleXCoordinate(1424), ScaleYCoordinate(884)), // Silver
-                new Point(ScaleXCoordinate(1464), ScaleYCoordinate(884)) // Gold
-            };
-            _newGameButtonPosition = new Point(ScaleXCoordinate(870), ScaleYCoordinate(885));
+
+            _marbleHintCoordinates = BaseHintButtonXs
+                .Select(x => new Point(ScaleXCoordinate(x), ScaleYCoordinate(BaseHintButtonY)))
+                .ToArray();
+
+            _newGameButtonPosition = new Point(ScaleXCoordinate(BaseNewGameButtonX), ScaleYCoordinate(BaseNewGameButtonY));
         }
     }
 }
